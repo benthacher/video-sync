@@ -24,6 +24,10 @@ function removeControlListeners() {
 }
 
 function init() {
+    if (ws) {
+        ws.close();
+    }
+    
     ws = new WebSocket('ws://71.192.170.86:9192');
     video = document.querySelector('video');
 
@@ -71,7 +75,7 @@ function init() {
 
     insertControlListeners();
 
-    console.log('loaded content script!')
+    console.log('loaded content script!');
 }
 
 window.addEventListener('load', init);

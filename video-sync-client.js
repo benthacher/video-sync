@@ -2,29 +2,30 @@ let ws;
 let video;
 
 function broadcastPlay() {
-    ws.send(JSON.stringify({
-        timestamp: video.currentTime
+    ws?.send(JSON.stringify({
+        timestamp: video?.currentTime
     }));
 }
 
 function broadcastPause() {
-    ws.send(JSON.stringify({
+    ws?.send(JSON.stringify({
         pause: true
     }));
 }
 
 function insertControlListeners() {
-    video.addEventListener('pause', broadcastPause);
-    video.addEventListener('play', broadcastPlay);
+    video?.addEventListener('pause', broadcastPause);
+    video?.addEventListener('play', broadcastPlay);
 }
 
 function removeControlListeners() {
-    video.removeEventListener('pause', broadcastPause);
-    video.removeEventListener('play', broadcastPlay);
+    video?.removeEventListener('pause', broadcastPause);
+    video?.removeEventListener('play', broadcastPlay);
 }
 
 function init() {
     ws = new WebSocket('ws://71.192.170.86:9192');
+    video = document.querySelector('video');
 
     ws.onmessage = ev => {
         let json;
@@ -68,19 +69,7 @@ function init() {
         }
     };
 
-    video = document.querySelector('video');
-
     insertControlListeners();
-
-    browser.runtime.onMessage.addListener(() => {
-        if (ws.readyState === WebSocket.OPEN) {
-            const dataString = JSON.stringify({
-                timestamp: video.currentTime
-            });
-            console.log('sending timestamp from content script...', dataString)
-            ws.send(dataString);
-        }
-    });
 
     console.log('loaded content script!')
 }
@@ -91,3 +80,5 @@ window.addEventListener('load', init);
 if (document.readyState === "complete") {
     init();
 }
+
+browser.runtime.onMessage.addListener(init);

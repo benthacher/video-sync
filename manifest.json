@@ -14,27 +14,26 @@
             "matches": [
                 "*://*.youtube.com/watch*",
                 "*://*.hulu.com/watch/*",
+                "*://*.mozilla.org/*",
                 "*://*.max.com/video/watch/*"
             ],
             "js": ["video-sync-client.js"]
         }
     ],
-
-    "background": {
-        "scripts": ["background.js"]
-    },
     
     "page_action": {
         "show_matches": [
             "*://*.youtube.com/watch*",
             "*://*.hulu.com/watch/*",
+            "*://*.mozilla.org/*",
             "*://*.max.com/video/watch/*"
         ],
         "default_icon": {
             "19": "icons/video-sync-19.png",
             "38": "icons/video-sync-38.png"
         },
-        "default_title": "Video Sync"
+        "default_title": "Video Sync",
+        "default_popup": "popup/settings.html"
     }      
 }
   

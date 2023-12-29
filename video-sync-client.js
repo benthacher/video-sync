@@ -1,26 +1,39 @@
 let ws;
 let video;
+let canBroadcastPlay = true;
+let canBroadcastPause = true;
+console.log('content script injected!');
+
+function sendMessage(msg) {
+    ws?.send(JSON.stringify(msg));
+}
 
 function broadcastPlay() {
-    ws?.send(JSON.stringify({
-        timestamp: video?.currentTime
-    }));
+    if (!canBroadcastPlay) {
+        return;
+    }
+
+    console.log('Broadcasting play...')
+    sendMessage({ timestamp: video?.currentTime });
 }
 
 function broadcastPause() {
-    ws?.send(JSON.stringify({
-        pause: true
-    }));
+    if (!canBroadcastPause) {
+        return;
+    }
+
+    console.log('Broadcasting pause...')
+    sendMessage({ pause: true });
 }
 
-function insertControlListeners() {
-    video?.addEventListener('pause', broadcastPause);
-    video?.addEventListener('play', broadcastPlay);
+function broadcastVideoLoaded() {
+    console.log('Broadcasting ready...')
+    sendMessage({ ready: true });
 }
 
-function removeControlListeners() {
-    video?.removeEventListener('pause', broadcastPause);
-    video?.removeEventListener('play', broadcastPlay);
+function joinSession(sessionName) {
+    console.log(`joining session "${sessionName}"`);
+    sendMessage({ sessionName });
 }
 
 function init() {
@@ -31,6 +44,15 @@ function init() {
     ws = new WebSocket('ws://71.192.170.86:9192');
     video = document.querySelector('video');
 
+    if (!video) {
+        console.log('no video found')
+        return;
+    }
+
+    video.addEventListener('pause', broadcastPause);
+    video.addEventListener('play', broadcastPlay);
+    video.addEventListener('canplaythrough', broadcastVideoLoaded);
+
     ws.onmessage = ev => {
         let json;
         try {
@@ -40,49 +62,40 @@ function init() {
             return;
         }
 
-        // remove control listeners here so that the pauses and plays aren't broadcasted
-        removeControlListeners();
-
         if ('timestamp' in json) {
+            // while we're seeking, we can't broadcast play or pause
+            canBroadcastPlay = canBroadcastPause = false;
             // pause video, set current time to given timestamp, then play
             console.log('seeking to timestamp...');
 
-            function notifyReady() {
-                video.pause();
-                video.currentTime = json.timestamp;
-                ws.send(JSON.stringify({
-                    'ready': true
-                }));
-                console.log('video buffered!');
-                video.removeEventListener('playing', notifyReady);
-            }
-
-            // when the video actually plays, pause it and rewind, notify the server, then remove the event listener from the video
-            video.addEventListener('playing', notifyReady);
-
             video.pause();
             video.currentTime = json.timestamp;
-            video.play();
+
+            if (video.readyState > 3) {
+                // if video is already ready (no buffering needed) just broadcast
+                broadcastVideoLoaded();
+            }
         } else if (json.play) {
             video.play();
-            setTimeout(insertControlListeners, 500);
             console.log('playing!');
+            canBroadcastPause = true;
         } else if (json.pause) {
             video.pause();
-            insertControlListeners();
+            canBroadcastPlay = true;
         }
     };
 
-    insertControlListeners();
-
-    console.log('loaded content script!');
+    console.log('done initializing!');
 }
 
 window.addEventListener('load', init);
+
+browser.runtime.onMessage.addListener(sessionName => {
+    // message is always session name
+    joinSession(sessionName);
+});
 
 // if document is already loaded, run init
 if (document.readyState === "complete") {
     init();
 }
-
-browser.runtime.onMessage.addListener(init);

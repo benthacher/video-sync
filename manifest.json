@@ -12,6 +12,7 @@
     "content_scripts": [
         {
             "matches": [
+                "*://*.paramountplus.com/shows/video*",
                 "*://*.youtube.com/watch*",
                 "*://*.hulu.com/watch/*",
                 "*://*.mozilla.org/*",
@@ -23,6 +24,7 @@
     
     "page_action": {
         "show_matches": [
+            "*://*.paramountplus.com/shows/video*",
             "*://*.youtube.com/watch*",
             "*://*.hulu.com/watch/*",
             "*://*.mozilla.org/*",
